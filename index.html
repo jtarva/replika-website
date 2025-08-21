@@ -330,13 +330,27 @@
                 this.startAnimation();
             }
             
+            getResponsiveRadius() {
+                // Scale particle radius based on viewport width
+                // Mobile (< 768px): 0.3-0.8px
+                // Tablet (768-1024px): 0.4-1.0px  
+                // Desktop (> 1024px): 0.5-1.5px
+                if (this.width < 768) {
+                    return Math.random() * 0.5 + 0.3; // 0.3-0.8px for mobile
+                } else if (this.width < 1024) {
+                    return Math.random() * 0.6 + 0.4; // 0.4-1.0px for tablet
+                } else {
+                    return Math.random() * 1 + 0.5; // 0.5-1.5px for desktop
+                }
+            }
+            
             initializeParticles() {
                 for (let i = 0; i < this.particleCount; i++) {
                     const particle = {
                         id: i,
                         x: Math.random() * this.width,
                         y: Math.random() * this.height,
-                        radius: Math.random() * 1 + 0.5,
+                        radius: this.getResponsiveRadius(),
                         opacity: Math.random() * 0.4 + 0.5,
                         wigglePhase: Math.random() * Math.PI * 2,
                         wiggleSpeed: 0.02 + Math.random() * 0.02,
@@ -360,21 +374,21 @@
                     // Calculate lightbulb positions (middle shape)
                     const lightbulbCoords = this.getLightbulbCoordinates(i);
                     particle.lightbulbX = this.width / 2 + lightbulbCoords.x;
-                    particle.lightbulbY = this.height * 0.8 + lightbulbCoords.y;
+                    particle.lightbulbY = this.height * 0.7 + 70 + lightbulbCoords.y;
                     particle.baseLightbulbX = particle.lightbulbX;
                     particle.baseLightbulbY = particle.lightbulbY;
                     
                     // Calculate bot positions (third shape) - same location as lightbulb
                     const botCoords = this.getBotCoordinates(i);
                     particle.botX = this.width / 2 + botCoords.x;
-                    particle.botY = this.height * 0.8 + botCoords.y;
+                    particle.botY = this.height * 0.7 + 70 + botCoords.y;
                     particle.baseBotX = particle.botX;
                     particle.baseBotY = particle.botY;
                     
                     // Calculate chart positions (final shape) - same location as others
                     const chartCoords = this.getChartCoordinates(i);
                     particle.chartX = this.width / 2 + chartCoords.x;
-                    particle.chartY = this.height * 0.8 + chartCoords.y;
+                    particle.chartY = this.height * 0.7 + 70 + chartCoords.y;
                     particle.baseChartX = particle.chartX;
                     particle.baseChartY = particle.chartY;
                     
@@ -399,19 +413,18 @@
             }
             
             getLightbulbCoordinates(index) {
-                const scale = Math.min(this.width, this.height) / 120; // Scale relative to viewport
+                const scale = (Math.min(this.width, this.height) / 120) * 1.69; // 69% bigger than original (1.3 * 1.3)
                 
                 // Create outline based on exact SVG path coordinates
                 const totalPerimeter = this.particleCount;
                 const normalizedIndex = index / totalPerimeter;
                 
-                // Define sections based on SVG path segments
-                const rightSide = 0.20;      // Right side curve (20%)
-                const topArc = 0.30;         // Top semicircle (30%)
-                const leftSide = 0.20;       // Left side curve (20%)
-                const topLine = 0.15;        // Top horizontal line (15%)
-                const bottomLine = 0.10;     // Bottom horizontal line (10%)
-                const connection = 0.05;     // Connection back (5%)
+                // Define sections based on SVG path segments (removed connection section)
+                const rightSide = 0.22;      // Right side curve (22%, increased from 20%)
+                const topArc = 0.32;         // Top semicircle (32%, increased from 30%)
+                const leftSide = 0.22;       // Left side curve (22%, increased from 20%)
+                const topLine = 0.12;        // Top horizontal line (12%, decreased from 15%)
+                const bottomLine = 0.12;     // Bottom horizontal line (12%, increased from 10%)
                 
                 let x, y;
                 
@@ -455,17 +468,11 @@
                     x = 9 + progress * (15 - 9);
                     y = 17.25; // Moved down by 1.25 units (10 pixels at 8x scale)
                     
-                } else if (normalizedIndex < rightSide + topArc + leftSide + topLine + bottomLine) {
+                } else {
                     // Bottom horizontal line: moved 10 pixels down from previous position
                     const progress = (normalizedIndex - rightSide - topArc - leftSide - topLine) / bottomLine;
                     x = 10 + progress * (14 - 10);
                     y = 20.25; // Moved down by 1.25 units (10 pixels at 8x scale)
-                    
-                } else {
-                    // Connection back to start (vertical connection) - updated to match new bottom line position
-                    const progress = (normalizedIndex - rightSide - topArc - leftSide - topLine - bottomLine) / connection;
-                    x = 9 + progress * (15 - 9); // Connect from end of bottom line to start of bulb
-                    y = 20.25 - progress * (20.25 - 14); // Go up from new bottom line position to bulb
                 }
                 
                 // Scale and center the coordinates
@@ -480,7 +487,7 @@
             }
             
             getBotCoordinates(index) {
-                const scale = Math.min(this.width, this.height) / 120; // Scale relative to viewport
+                const scale = (Math.min(this.width, this.height) / 120) * 1.69; // 69% bigger than original (1.3 * 1.3)
                 
                 // Create outline based on exact SVG path coordinates
                 const totalPerimeter = this.particleCount;
@@ -574,7 +581,7 @@
             }
             
             getChartCoordinates(index) {
-                const scale = Math.min(this.width, this.height) / 120; // Scale relative to viewport
+                const scale = (Math.min(this.width, this.height) / 120) * 1.69; // 69% bigger than original (1.3 * 1.3)
                 
                 // Create outline based on exact SVG path coordinates
                 const totalPerimeter = this.particleCount;
@@ -681,10 +688,6 @@
                     const twinkle = Math.sin(particle.twinklePhase) * particle.twinkleAmplitude;
                     particle.currentOpacity = Math.max(0.1, Math.min(1.0, particle.baseOpacity + twinkle));
                     
-                    // Debug: Occasional logging to verify twinkling is working
-                    if (index === 0 && Math.random() < 0.01) {
-                        console.log('Twinkling - Opacity:', particle.currentOpacity.toFixed(3), 'twinkle:', twinkle.toFixed(3));
-                    }
                     
                     // Apply continuous scaling to all shape positions based on current animation state
                     // Don't update during transitions as particles are actively moving
@@ -698,23 +701,23 @@
                         // Scale lightbulb positions with enhanced scaling effect
                         const enhancedScaleFactor = 1 + (scaleFactor - 1) * 2; // Double the scaling effect
                         const originalX = particle.baseLightbulbX - this.width / 2;
-                        const originalY = particle.baseLightbulbY - this.height * 0.8;
+                        const originalY = particle.baseLightbulbY - (this.height * 0.7 + 70);
                         particle.currentBaseX = this.width / 2 + originalX * enhancedScaleFactor;
-                        particle.currentBaseY = this.height * 0.8 + originalY * enhancedScaleFactor;
+                        particle.currentBaseY = this.height * 0.7 + 70 + originalY * enhancedScaleFactor;
                     } else if (this.animationState === 'bot') {
                         // Scale bot positions with enhanced scaling effect
                         const enhancedScaleFactor = 1 + (scaleFactor - 1) * 2; // Double the scaling effect
                         const originalX = particle.baseBotX - this.width / 2;
-                        const originalY = particle.baseBotY - this.height * 0.8;
+                        const originalY = particle.baseBotY - (this.height * 0.7 + 70);
                         particle.currentBaseX = this.width / 2 + originalX * enhancedScaleFactor;
-                        particle.currentBaseY = this.height * 0.8 + originalY * enhancedScaleFactor;
+                        particle.currentBaseY = this.height * 0.7 + 70 + originalY * enhancedScaleFactor;
                     } else if (this.animationState === 'chart') {
                         // Scale chart positions with enhanced scaling effect
                         const enhancedScaleFactor = 1 + (scaleFactor - 1) * 2; // Double the scaling effect
                         const originalX = particle.baseChartX - this.width / 2;
-                        const originalY = particle.baseChartY - this.height * 0.8;
+                        const originalY = particle.baseChartY - (this.height * 0.7 + 70);
                         particle.currentBaseX = this.width / 2 + originalX * enhancedScaleFactor;
-                        particle.currentBaseY = this.height * 0.8 + originalY * enhancedScaleFactor;
+                        particle.currentBaseY = this.height * 0.7 + 70 + originalY * enhancedScaleFactor;
                     }
                     // Note: During transition states (transitioning, transitioning-to-bot, etc.), 
                     // we don't update currentBaseX/Y as they are controlled by the animation functions
@@ -1035,6 +1038,7 @@
                 this.svg.selectAll('circle')
                     .attr('cx', d => d.currentX || d.baseArrowX)
                     .attr('cy', d => d.currentY || d.baseArrowY)
+                    .attr('r', d => d.radius) // Update radius for responsive scaling
                     .style('opacity', d => d.currentOpacity || d.opacity); // Use style instead of attr to override transitions
                 
                 requestAnimationFrame(() => this.animate());
@@ -1064,26 +1068,28 @@
                 this.width = window.innerWidth;
                 this.height = window.innerHeight;
                 
-                // Recalculate positions for all particles
+                // Recalculate positions and radius for all particles
                 this.particles.forEach((particle, i) => {
+                    // Update particle radius based on new viewport width
+                    particle.radius = this.getResponsiveRadius();
                     // Lightbulb positions
                     const lightbulbCoords = this.getLightbulbCoordinates(i);
                     particle.lightbulbX = this.width / 2 + lightbulbCoords.x;
-                    particle.lightbulbY = this.height * 0.8 + lightbulbCoords.y;
+                    particle.lightbulbY = this.height * 0.7 + 70 + lightbulbCoords.y;
                     particle.baseLightbulbX = particle.lightbulbX;
                     particle.baseLightbulbY = particle.lightbulbY;
                     
                     // Bot positions - same location as lightbulb
                     const botCoords = this.getBotCoordinates(i);
                     particle.botX = this.width / 2 + botCoords.x;
-                    particle.botY = this.height * 0.8 + botCoords.y;
+                    particle.botY = this.height * 0.7 + 70 + botCoords.y;
                     particle.baseBotX = particle.botX;
                     particle.baseBotY = particle.botY;
                     
                     // Chart positions - same location as others
                     const chartCoords = this.getChartCoordinates(i);
                     particle.chartX = this.width / 2 + chartCoords.x;
-                    particle.chartY = this.height * 0.8 + chartCoords.y;
+                    particle.chartY = this.height * 0.7 + 70 + chartCoords.y;
                     particle.baseChartX = particle.chartX;
                     particle.baseChartY = particle.chartY;
                     
