@@ -113,28 +113,16 @@
                     <h1 class="text-2xl font-courier font-bold text-white">Replika</h1>
                 </div>
                 
-                <!-- Desktop Menu -->
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-4">
-                        <a href="#" class="text-white hover:text-primary px-3 py-2 text-sm font-medium">Etusivu</a>
-                        <div class="relative dropdown">
-                            <button class="text-white hover:text-primary px-3 py-2 text-sm font-medium">Palvelut</button>
-                            <div class="dropdown-menu absolute left-0 mt-2 w-48 bg-white shadow-lg hidden">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Konsultointi</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Kehitys</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tuki</a>
-                            </div>
-                        </div>
-                        <a href="#" class="text-white hover:text-primary px-3 py-2 text-sm font-medium">Tietoa meistä</a>
-                        <a href="#" class="text-white hover:text-primary px-3 py-2 text-sm font-medium">Yhteystiedot</a>
-                    </div>
-                </div>
-                
-                <!-- Mobile menu button -->
-                <div class="md:hidden">
+                <!-- Hamburger menu button (always visible) -->
+                <div>
                     <button class="text-white hover:text-primary" onclick="toggleMobileMenu()">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <!-- Hamburger icon (visible when menu is closed) -->
+                        <svg id="hamburger-icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <!-- Cross icon (hidden when menu is closed) -->
+                        <svg id="cross-icon" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
@@ -142,7 +130,7 @@
         </div>
         
         <!-- Mobile Menu -->
-        <div id="mobile-menu" class="md:hidden hidden">
+        <div id="mobile-menu" class="hidden">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-black bg-opacity-90 border-t border-gray-600">
                 <a href="#" class="text-white hover:text-primary block px-3 py-2 text-base font-medium">Etusivu</a>
                 <a href="#" class="text-white hover:text-primary block px-3 py-2 text-base font-medium">Palvelut</a>
@@ -301,7 +289,15 @@
     <script>
         function toggleMobileMenu() {
             const mobileMenu = document.getElementById('mobile-menu');
+            const hamburgerIcon = document.getElementById('hamburger-icon');
+            const crossIcon = document.getElementById('cross-icon');
+            
+            // Toggle menu visibility
             mobileMenu.classList.toggle('hidden');
+            
+            // Toggle between hamburger and cross icons
+            hamburgerIcon.classList.toggle('hidden');
+            crossIcon.classList.toggle('hidden');
         }
         
         // Smooth scrolling for anchor links
@@ -344,7 +340,12 @@
                         opacity: Math.random() * 0.4 + 0.5,
                         wigglePhase: Math.random() * Math.PI * 2,
                         wiggleSpeed: 0.02 + Math.random() * 0.02,
-                        wiggleAmplitude: 3 + Math.random() * 4  // Much more wiggling for oval
+                        wiggleAmplitude: 3 + Math.random() * 4,  // Much more wiggling for oval
+                        // Star-like twinkling properties
+                        twinklePhase: Math.random() * Math.PI * 2,
+                        twinkleSpeed: 0.1 + Math.random() * 0.15, // Fast but visible twinkling
+                        twinkleAmplitude: 0.4 + Math.random() * 0.3, // Random twinkling intensity (more pronounced)
+                        baseOpacity: 0.5 + Math.random() * 0.3 // Random base brightness
                     };
                     
                     // Calculate oval positions (starting shape) - centered in hero
@@ -377,6 +378,10 @@
                     particle.baseChartX = particle.chartX;
                     particle.baseChartY = particle.chartY;
                     
+                    // Initialize currentOpacity with twinkling effect
+                    const twinkle = Math.sin(particle.twinklePhase) * particle.twinkleAmplitude;
+                    particle.currentOpacity = Math.max(0.1, Math.min(1.0, particle.baseOpacity + twinkle));
+                    
                     this.particles.push(particle);
                 }
             }
@@ -390,7 +395,7 @@
                     .attr('r', d => d.radius)
                     .attr('cx', d => d.x)
                     .attr('cy', d => d.y)
-                    .attr('opacity', d => d.opacity);
+                    .attr('opacity', d => d.currentOpacity || d.baseOpacity);
             }
             
             getLightbulbCoordinates(index) {
@@ -664,7 +669,56 @@
             }
             
             updateWiggle() {
-                this.particles.forEach(particle => {
+                // Calculate continuous scaling effect for all shapes
+                const time = Date.now() / 1000;
+                const sizeVariation = Math.sin(time * 0.8) * 50;
+                const baseWidth = this.width * 0.8;
+                const scaleFactor = (baseWidth + sizeVariation) / baseWidth;
+                
+                this.particles.forEach((particle, index) => {
+                    // ALWAYS update twinkling for ALL particles regardless of animation state
+                    particle.twinklePhase += particle.twinkleSpeed;
+                    const twinkle = Math.sin(particle.twinklePhase) * particle.twinkleAmplitude;
+                    particle.currentOpacity = Math.max(0.1, Math.min(1.0, particle.baseOpacity + twinkle));
+                    
+                    // Debug: Occasional logging to verify twinkling is working
+                    if (index === 0 && Math.random() < 0.01) {
+                        console.log('Twinkling - Opacity:', particle.currentOpacity.toFixed(3), 'twinkle:', twinkle.toFixed(3));
+                    }
+                    
+                    // Apply continuous scaling to all shape positions based on current animation state
+                    // Don't update during transitions as particles are actively moving
+                    if (this.animationState === 'oval') {
+                        // Scale oval positions
+                        const originalX = particle.baseOvalX - this.width / 2;
+                        const originalY = particle.baseOvalY - this.height / 2;
+                        particle.currentBaseX = this.width / 2 + originalX * scaleFactor;
+                        particle.currentBaseY = this.height / 2 + originalY * scaleFactor;
+                    } else if (this.animationState === 'lightbulb') {
+                        // Scale lightbulb positions with enhanced scaling effect
+                        const enhancedScaleFactor = 1 + (scaleFactor - 1) * 2; // Double the scaling effect
+                        const originalX = particle.baseLightbulbX - this.width / 2;
+                        const originalY = particle.baseLightbulbY - this.height * 0.8;
+                        particle.currentBaseX = this.width / 2 + originalX * enhancedScaleFactor;
+                        particle.currentBaseY = this.height * 0.8 + originalY * enhancedScaleFactor;
+                    } else if (this.animationState === 'bot') {
+                        // Scale bot positions with enhanced scaling effect
+                        const enhancedScaleFactor = 1 + (scaleFactor - 1) * 2; // Double the scaling effect
+                        const originalX = particle.baseBotX - this.width / 2;
+                        const originalY = particle.baseBotY - this.height * 0.8;
+                        particle.currentBaseX = this.width / 2 + originalX * enhancedScaleFactor;
+                        particle.currentBaseY = this.height * 0.8 + originalY * enhancedScaleFactor;
+                    } else if (this.animationState === 'chart') {
+                        // Scale chart positions with enhanced scaling effect
+                        const enhancedScaleFactor = 1 + (scaleFactor - 1) * 2; // Double the scaling effect
+                        const originalX = particle.baseChartX - this.width / 2;
+                        const originalY = particle.baseChartY - this.height * 0.8;
+                        particle.currentBaseX = this.width / 2 + originalX * enhancedScaleFactor;
+                        particle.currentBaseY = this.height * 0.8 + originalY * enhancedScaleFactor;
+                    }
+                    // Note: During transition states (transitioning, transitioning-to-bot, etc.), 
+                    // we don't update currentBaseX/Y as they are controlled by the animation functions
+                    
                     // Update wiggle phase
                     particle.wigglePhase += particle.wiggleSpeed;
                     
@@ -675,7 +729,6 @@
                     // Apply wiggle to current base position (which can be interpolated during transitions)
                     particle.currentX = (particle.currentBaseX || particle.baseArrowX) + wiggleX;
                     particle.currentY = (particle.currentBaseY || particle.baseArrowY) + wiggleY;
-                    particle.currentOpacity = 0.8 + Math.sin(particle.wigglePhase * 0.5) * 0.2;
                 });
             }
             
@@ -686,13 +739,16 @@
                     .duration(3000)
                     .ease(d3.easeCubicOut)
                     .attr('cx', d => d.baseOvalX)
-                    .attr('cy', d => d.baseOvalY)
-                    .attr('opacity', 0.8);
+                    .attr('cy', d => d.baseOvalY);
+                    // Remove fixed opacity to allow twinkling effect
                 
                 this.animationState = 'oval';
             }
             
             transitionToLightbulb() {
+                // Change state immediately to stop pulsating effect
+                this.animationState = 'transitioning';
+                
                 // Gradually move each particle from oval to lightbulb position
                 this.particles.forEach((particle, index) => {
                     // Stagger the start time slightly for more organic movement
@@ -702,8 +758,6 @@
                         this.animateParticleToLightbulb(particle);
                     }, delay);
                 });
-                
-                this.animationState = 'transitioning';
                 
                 // Set intermediate state after first transition completes
                 setTimeout(() => {
@@ -718,8 +772,9 @@
             animateParticleToLightbulb(particle) {
                 const startTime = Date.now();
                 const duration = 1000; // 1 second for each particle to reach lightbulb
-                const startX = particle.baseOvalX;
-                const startY = particle.baseOvalY;
+                // Use current scaled position (from pulsating) as start position for smooth transition
+                const startX = particle.currentBaseX || particle.baseOvalX;
+                const startY = particle.currentBaseY || particle.baseOvalY;
                 const endX = particle.baseLightbulbX;
                 const endY = particle.baseLightbulbY;
                 
@@ -760,6 +815,9 @@
             }
             
             transitionToBot() {
+                // Change state immediately to maintain scaling continuity
+                this.animationState = 'transitioning-to-bot';
+                
                 // Gradually move each particle from lightbulb to bot position
                 this.particles.forEach((particle, index) => {
                     // Stagger the start time slightly for more organic movement
@@ -769,8 +827,6 @@
                         this.animateParticleToBot(particle);
                     }, delay);
                 });
-                
-                this.animationState = 'transitioning-to-bot';
                 
                 // Set intermediate state after transition completes
                 setTimeout(() => {
@@ -785,8 +841,9 @@
             animateParticleToBot(particle) {
                 const startTime = Date.now();
                 const duration = 1000; // 1 second for each particle to reach bot
-                const startX = particle.baseLightbulbX;
-                const startY = particle.baseLightbulbY;
+                // Use current scaled positions for smooth transition
+                const startX = particle.currentBaseX || particle.baseLightbulbX;
+                const startY = particle.currentBaseY || particle.baseLightbulbY;
                 const endX = particle.baseBotX;
                 const endY = particle.baseBotY;
                 
@@ -827,6 +884,9 @@
             }
             
             transitionToChart() {
+                // Change state immediately to maintain scaling continuity
+                this.animationState = 'transitioning-to-chart';
+                
                 // Gradually move each particle from bot to chart position
                 this.particles.forEach((particle, index) => {
                     // Stagger the start time slightly for more organic movement
@@ -836,8 +896,6 @@
                         this.animateParticleToChart(particle);
                     }, delay);
                 });
-                
-                this.animationState = 'transitioning-to-chart';
                 
                 // Set intermediate state after transition completes
                 setTimeout(() => {
@@ -852,8 +910,9 @@
             animateParticleToChart(particle) {
                 const startTime = Date.now();
                 const duration = 1000; // 1 second for each particle to reach chart
-                const startX = particle.baseBotX;
-                const startY = particle.baseBotY;
+                // Use current scaled positions for smooth transition
+                const startX = particle.currentBaseX || particle.baseBotX;
+                const startY = particle.currentBaseY || particle.baseBotY;
                 const endX = particle.baseChartX;
                 const endY = particle.baseChartY;
                 
@@ -894,6 +953,9 @@
             }
             
             transitionToOval() {
+                // Change state immediately to maintain scaling continuity
+                this.animationState = 'transitioning-to-oval';
+                
                 // Gradually move each particle from chart back to oval position
                 this.particles.forEach((particle, index) => {
                     // Stagger the start time slightly for more organic movement
@@ -903,8 +965,6 @@
                         this.animateParticleToOval(particle);
                     }, delay);
                 });
-                
-                this.animationState = 'transitioning-to-oval';
                 
                 // Set final state after transition completes
                 setTimeout(() => {
@@ -917,8 +977,9 @@
             animateParticleToOval(particle) {
                 const startTime = Date.now();
                 const duration = 1000; // 1 second for each particle to reach oval
-                const startX = particle.baseChartX;
-                const startY = particle.baseChartY;
+                // Use current scaled positions for smooth transition
+                const startX = particle.currentBaseX || particle.baseChartX;
+                const startY = particle.currentBaseY || particle.baseChartY;
                 const endX = particle.baseOvalX;
                 const endY = particle.baseOvalY;
                 
@@ -974,7 +1035,7 @@
                 this.svg.selectAll('circle')
                     .attr('cx', d => d.currentX || d.baseArrowX)
                     .attr('cy', d => d.currentY || d.baseArrowY)
-                    .attr('opacity', d => d.currentOpacity || d.opacity);
+                    .style('opacity', d => d.currentOpacity || d.opacity); // Use style instead of attr to override transitions
                 
                 requestAnimationFrame(() => this.animate());
             }
@@ -987,7 +1048,7 @@
                     .ease(d3.easeCubicOut)
                     .attr('cx', d => d.baseOvalX)
                     .attr('cy', d => d.baseOvalY)
-                    .attr('opacity', 0.8)
+                    // Remove fixed opacity to allow twinkling effect
                     .on('end', () => {
                         // Set the sequence start time when oval formation is complete
                         if (!this.sequenceStartTime) {
